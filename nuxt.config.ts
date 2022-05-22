@@ -6,5 +6,8 @@ export default defineNuxtConfig({
     '@/assets/fonts/fonts.scss',
     '@/assets/styles/main.scss',
     '@/assets/styles/reset.scss'
-  ]
+  ],
+  vite: {
+    assetsInclude: ['**/*.glb', '**/*.gltf']
+  },
 })

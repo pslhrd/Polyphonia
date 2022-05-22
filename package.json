@@ -9,7 +9,9 @@
     "nuxt3": "latest"
   },
   "dependencies": {
+    "gsap": "^3.10.4",
     "sass": "^1.49.11",
-    "sass-loader": "^12.6.0"
+    "sass-loader": "^12.6.0",
+    "three": "^0.140.2"
   }
 }
