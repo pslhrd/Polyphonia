@@ -19,7 +19,9 @@ import {
   DirectionalLight,
   UniformsLib,
   UniformsUtils,
-  CameraHelper
+  CameraHelper,
+  PMREMGenerator,
+  TextureLoader
 } from 'three'
 
 import { gsap } from 'gsap'
@@ -28,9 +30,12 @@ import { store } from '/store/store'
 // import createParticles from '/webgl/particles'
 
 // Remove this if you don't need to load any 3D model
+import { RGBMLoader } from 'three/examples/jsm/loaders/RGBMLoader'
+import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
-import model from '/public/models/manetted.gltf'
+import model from '/models/sphere.gltf'
+import cubeMap from '/hdr/cannon.hdr'
 // import Stats from 'stats'
 // document.body.appendChild(stats.dom)
 
@@ -48,7 +53,6 @@ export class App {
   init() {
     this._createScene()
     this._createCamera()
-    this._cameraState()
     this._createRenderer()
     this._createControls()
     this._createProps()
@@ -80,7 +84,8 @@ export class App {
 
   _createProps() {
     const ambient = new AmbientLight(0xffffff, 1)
-    const directional = new DirectionalLight(0xffffff, 1)
+    const directional = new DirectionalLight(0xffffff, 0.5)
+    directional.position.set(-5, 5, 5)
     const axesHelper = new AxesHelper(5)
 
     directional.castShadow = true
@@ -88,7 +93,7 @@ export class App {
     directional.shadow.mapSize.height = 4096
     directional.shadow.bias = -0.004
 
-    this.scene.add(ambient, axesHelper, directional)
+    this.scene.add(axesHelper, ambient)
     this.scene.fog = new Fog(0x120720, 50, 150)
   }
 
@@ -98,6 +103,16 @@ export class App {
     this.camera.position.set(5, 5, 0)
     // this.camera.lookAt(this.reference)
     // console.log(this.camera.lookAt)
+  }
+
+  _setMaterial() {
+    let generator = new PMREMGenerator(this.renderer)
+    const hdr = new RGBELoader().load(cubeMap, (map) => {
+      this.envmap = generator.fromEquirectangular(map)
+      this.material.envMap = this.envmap.texture
+      this.material.envMapIntensity = 1.6
+      console.log(this.material)
+    })
   }
 
   _cameraState() {
@@ -153,16 +168,17 @@ export class App {
   _loadModel() {
     this.manager = new LoadingManager()
     this.gltfLoader = new GLTFLoader(this.manager)
-
     return new Promise(resolve => {
       this.gltfLoader.load(model, gltf => {
         this.model = gltf.scene.children[0]
-        console.log(this.model)
         this.model.position.set(0,0,0)
         this.model.traverse((elements) => {
           elements.castShadow = true
           elements.receiveShadow = true
-          console.log(elements)
+          this.material = elements.material
+          elements.material.metalness = 0.2
+          elements.material.roughness = 0.75
+          this._setMaterial()
         })
         this.scene.add(this.model)
         // console.log(this.model)

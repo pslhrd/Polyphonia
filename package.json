@@ -6,7 +6,7 @@
     "start": "node .output/server/index.mjs"
   },
   "devDependencies": {
-    "nuxt3": "latest"
+    "nuxt": "npm:nuxt3@latest"
   },
   "dependencies": {
     "gsap": "^3.10.4",

@@ -1,8 +1,8 @@
 <template>
   <section class="cta">
-    <div @click="setState(1)">State 1</div>
+    <!-- <div @click="setState(1)">State 1</div>
     <div @click="setState(2)">State 2</div>
-    <div @click="setState(3)">State 3</div>
+    <div @click="setState(3)">State 3</div> -->
   </section>
 </template>
 
