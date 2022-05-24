@@ -4,24 +4,14 @@ import {
   PerspectiveCamera,
   Vector3,
   AmbientLight,
-  PointLight,
   AnimationMixer,
-  BufferGeometry,
-  PointsMaterial,
-  Points,
-  Float32BufferAttribute,
   Clock,
+  Group,
   AxesHelper,
-  GridHelper,
   Fog,
-  ShaderMaterial,
   LoadingManager,
   DirectionalLight,
-  UniformsLib,
-  UniformsUtils,
-  CameraHelper,
   PMREMGenerator,
-  TextureLoader
 } from 'three'
 
 import { gsap } from 'gsap'
@@ -54,20 +44,19 @@ export class App {
   init() {
     this._createScene()
     this._createCamera()
-    // this._createPostPro()
     this._createRenderer()
     this._createControls()
-    // this._setMaterial()
     this._createProps()
     this._loadModel().then(() => {
       this._addListeners()
       this.renderer.setAnimationLoop(() => {
-        // this.delta = this.clock.getDelta()
-        // this.time = this.clock.getElapsedTime()
+        this.delta = this.clock.getDelta()
+        this.time = this.clock.getElapsedTime()
         this._render()       
         this.controls.update()
-        // this.mixer.update(this.delta)
-        // this._animateParticles(this.time)
+        this.meshes.forEach(mesh => {
+          mesh.rotation.z = mesh.speed * this.time
+        })
       })
     })
   }
@@ -83,6 +72,8 @@ export class App {
 
   _createScene() {
     this.scene = new Scene()
+    this.clock = new Clock()
+    this.meshes = []
   }
 
   _createProps() {
@@ -119,7 +110,8 @@ export class App {
         if (elements.type === 'Mesh') {
           elements.material.envMap = this.envmap.texture
           elements.material.envMapIntensity = 1.6
-          console.log(elements)
+          this.meshes.push(elements)
+          // console.log(this.meshes)
         }
       })
     })
@@ -166,15 +158,6 @@ export class App {
     this.renderer.shadowMap.enabled = true
   }
 
-  _createAnimations(model) {
-    this.clock = new Clock()
-    this.mixer = new AnimationMixer(model.scene)
-    console.log(model.animations)
-    model.animations.forEach((clip) => {
-      this.mixer.clipAction(clip).play()
-    })
-  }
-
   _loadModel() {
     this.manager = new LoadingManager()
     this.gltfLoader = new GLTFLoader(this.manager)
@@ -189,11 +172,11 @@ export class App {
             elements.receiveShadow = true
             elements.material.metalness = 0.2
             elements.material.roughness = 0.6
+            elements.speed = Math.random()
           }
         })
         this._setMaterial(this.model)
         this.scene.add(this.model)
-        // console.log(this.model)
         
       })
       this.gltfLoader.load(sphere, gltf => {
@@ -206,6 +189,7 @@ export class App {
             elements.receiveShadow = true
             elements.material.metalness = 0.2
             elements.material.roughness = 0.6
+            elements.speed = Math.random()
           }
         })
         this._setMaterial(this.model2)
