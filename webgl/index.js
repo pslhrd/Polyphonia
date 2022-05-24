@@ -31,10 +31,11 @@ import { store } from '/store/store'
 
 // Remove this if you don't need to load any 3D model
 import { RGBMLoader } from 'three/examples/jsm/loaders/RGBMLoader'
-import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader'
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
-import model from '/models/sphere.gltf'
+import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import model from '/models/scene.gltf'
+import sphere from '/models/sphere.gltf'
 import cubeMap from '/hdr/cannon.hdr'
 // import Stats from 'stats'
 // document.body.appendChild(stats.dom)
@@ -53,8 +54,10 @@ export class App {
   init() {
     this._createScene()
     this._createCamera()
+    // this._createPostPro()
     this._createRenderer()
     this._createControls()
+    // this._setMaterial()
     this._createProps()
     this._loadModel().then(() => {
       this._addListeners()
@@ -93,7 +96,7 @@ export class App {
     directional.shadow.mapSize.height = 4096
     directional.shadow.bias = -0.004
 
-    this.scene.add(axesHelper, ambient)
+    this.scene.add(axesHelper, ambient )
     this.scene.fog = new Fog(0x120720, 50, 150)
   }
 
@@ -105,13 +108,20 @@ export class App {
     // console.log(this.camera.lookAt)
   }
 
-  _setMaterial() {
+  _setMaterial(model) {
     let generator = new PMREMGenerator(this.renderer)
     const hdr = new RGBELoader().load(cubeMap, (map) => {
       this.envmap = generator.fromEquirectangular(map)
-      this.material.envMap = this.envmap.texture
-      this.material.envMapIntensity = 1.6
-      console.log(this.material)
+      // this.material.envMap = this.envmap.texture
+      // this.material.envMapIntensity = 1.6
+      // this.scene.background = map
+      model.traverse((elements) => {          
+        if (elements.type === 'Mesh') {
+          elements.material.envMap = this.envmap.texture
+          elements.material.envMapIntensity = 1.6
+          console.log(elements)
+        }
+      })
     })
   }
 
@@ -170,19 +180,37 @@ export class App {
     this.gltfLoader = new GLTFLoader(this.manager)
     return new Promise(resolve => {
       this.gltfLoader.load(model, gltf => {
-        this.model = gltf.scene.children[0]
+        this.model = gltf.scene
+        this.children = gltf.scene.children
         this.model.position.set(0,0,0)
-        this.model.traverse((elements) => {
-          elements.castShadow = true
-          elements.receiveShadow = true
-          this.material = elements.material
-          elements.material.metalness = 0.2
-          elements.material.roughness = 0.75
-          this._setMaterial()
+        this.model.traverse((elements) => {          
+          if (elements.type === 'Mesh') {
+            elements.castShadow = true
+            elements.receiveShadow = true
+            elements.material.metalness = 0.2
+            elements.material.roughness = 0.6
+          }
         })
+        this._setMaterial(this.model)
         this.scene.add(this.model)
         // console.log(this.model)
         
+      })
+      this.gltfLoader.load(sphere, gltf => {
+        this.model2 = gltf.scene
+        this.model2.position.set(2,2,3)
+        this.model2.scale.set(1.5, 1.5, 1.5)
+        this.model2.traverse((elements) => {          
+          if (elements.type === 'Mesh') {
+            elements.castShadow = true
+            elements.receiveShadow = true
+            elements.material.metalness = 0.2
+            elements.material.roughness = 0.6
+          }
+        })
+        this._setMaterial(this.model2)
+        this.scene.add(this.model2)
+        // console.log(this.model)        
       })
       this.manager.onLoad = function () {  
         console.log('done')
