@@ -168,11 +168,18 @@ export class App {
         this.model.position.set(0,0,0)
         this.model.traverse((elements) => {          
           if (elements.type === 'Mesh') {
+            // console.log(elements)
             elements.castShadow = true
             elements.receiveShadow = true
-            elements.material.metalness = 0.2
-            elements.material.roughness = 0.6
+            // elements.material.metalness = 0.2
+            // elements.material.roughness = 0.6
             elements.speed = Math.random()
+          }
+
+          if (elements.name === 'Vase') {
+            console.log(elements)
+            elements.material.metalness = 0.6
+            elements.material.roughness = 0.6
           }
         })
         this._setMaterial(this.model)
