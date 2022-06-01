@@ -9,6 +9,8 @@ import {
   Group,
   AxesHelper,
   Fog,
+  Vector2,
+  Color,
   LoadingManager,
   DirectionalLight,
   PMREMGenerator,
@@ -24,8 +26,7 @@ import { RGBMLoader } from 'three/examples/jsm/loaders/RGBMLoader'
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import model from '/models/scene.gltf'
-import sphere from '/models/sphere.gltf'
+import model from '/models/v1.gltf'
 import cubeMap from '/hdr/cannon.hdr'
 // import Stats from 'stats'
 // document.body.appendChild(stats.dom)
@@ -45,7 +46,7 @@ export class App {
     this._createScene()
     this._createCamera()
     this._createRenderer()
-    this._createControls()
+    // this._createControls()
     this._createProps()
     this._loadModel().then(() => {
       this._addListeners()
@@ -53,9 +54,9 @@ export class App {
         this.delta = this.clock.getDelta()
         this.time = this.clock.getElapsedTime()
         this._render()       
-        this.controls.update()
+        // this.controls.update()
         this.meshes.forEach(mesh => {
-          mesh.rotation.z = mesh.speed * this.time
+          mesh.rotation.z = mesh.speed * this.time / 2
         })
       })
     })
@@ -78,23 +79,25 @@ export class App {
 
   _createProps() {
     const ambient = new AmbientLight(0xffffff, 1)
-    const directional = new DirectionalLight(0xffffff, 0.5)
-    directional.position.set(-5, 5, 5)
+    const directional = new DirectionalLight(0xffffff, 0.2)
     const axesHelper = new AxesHelper(5)
+    
+
 
     directional.castShadow = true
-    directional.shadow.mapSize.width = 4096
-    directional.shadow.mapSize.height = 4096
+    directional.shadow.mapSize.width = 2048
+    directional.shadow.mapSize.height = 2048
+    directional.position.set(10,10,10)
     directional.shadow.bias = -0.004
 
-    this.scene.add(axesHelper, ambient )
-    this.scene.fog = new Fog(0x120720, 50, 150)
+    this.scene.add(axesHelper, ambient)
+    // this.scene.fog = new Fog(0xD0DCE9, 28, 30)
   }
 
   _createCamera() {
     this.reference = new Vector3(0, 0 , 0)
     this.camera = new PerspectiveCamera(75, this.canvas.clientWidth / this.canvas.clientHeight, 0.001, 1000)
-    this.camera.position.set(5, 5, 0)
+    this.camera.position.set(5, 5, 20)
     // this.camera.lookAt(this.reference)
     // console.log(this.camera.lookAt)
   }
@@ -109,7 +112,7 @@ export class App {
       model.traverse((elements) => {          
         if (elements.type === 'Mesh') {
           elements.material.envMap = this.envmap.texture
-          elements.material.envMapIntensity = 1.6
+          elements.material.envMapIntensity = elements.userData.envMap
           this.meshes.push(elements)
           // console.log(this.meshes)
         }
@@ -147,15 +150,18 @@ export class App {
   }
 
   _createRenderer() {
+    const color = new Color(0xD0DCE9)
     this.renderer = new WebGLRenderer({
       alpha: true,
+      // background: color,
       canvas: this.canvas,
       antialias: window.devicePixelRatio === 1
     })
 
     this.renderer.setSize(this.canvas.clientWidth, this.canvas.clientHeight)
     this.renderer.setPixelRatio(2)
-    this.renderer.shadowMap.enabled = true
+    // this.renderer.shadowMap.enabled = true
+    // this.renderer.outputEncoding = 3001
   }
 
   _loadModel() {
@@ -165,51 +171,31 @@ export class App {
       this.gltfLoader.load(model, gltf => {
         this.model = gltf.scene
         this.children = gltf.scene.children
+        this.gltfCamera = gltf.cameras[0]
+        this.camera = this.gltfCamera
+        console.log(this.model, this.gltfCamera)
         this.model.position.set(0,0,0)
         this.model.traverse((elements) => {          
           if (elements.type === 'Mesh') {
-            // console.log(elements)
             elements.castShadow = true
             elements.receiveShadow = true
-            // elements.material.metalness = 0.2
-            // elements.material.roughness = 0.6
             elements.speed = Math.random()
-          }
-
-          if (elements.name === 'Vase') {
-            console.log(elements)
-            elements.material.metalness = 0.6
-            elements.material.roughness = 0.6
+            elements.material.roughness = elements.userData.roughness
+            elements.material.metalness = elements.userData.metalness
+            console.log(elements.material.roughness)
+            
           }
         })
         this._setMaterial(this.model)
         this.scene.add(this.model)
         
       })
-      this.gltfLoader.load(sphere, gltf => {
-        this.model2 = gltf.scene
-        this.model2.position.set(2,2,3)
-        this.model2.scale.set(1.5, 1.5, 1.5)
-        this.model2.traverse((elements) => {          
-          if (elements.type === 'Mesh') {
-            elements.castShadow = true
-            elements.receiveShadow = true
-            elements.material.metalness = 0.2
-            elements.material.roughness = 0.6
-            elements.speed = Math.random()
-          }
-        })
-        this._setMaterial(this.model2)
-        this.scene.add(this.model2)
-        // console.log(this.model)        
-      })
       this.manager.onLoad = function () {  
-        console.log('done')
+        // console.log('done')
         resolve()
       }
     })
   }
-
   _addListeners() {
     window.addEventListener('resize', this._resizeCb, { passive: true })
     // window.addEventListener('mousemove', this._mousemoveCb, { passive: true })
