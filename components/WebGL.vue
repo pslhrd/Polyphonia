@@ -25,7 +25,7 @@ onMounted(() => {
     height: 100%;
     top: 0;
     left: 0;
-    background-color: black;
+    background-color: #D0DCE9;
     canvas {
       width: 100%;
       height: 100%;
