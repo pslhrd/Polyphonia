@@ -54,7 +54,8 @@ export class App {
     this._createScene()
     this._createCamera()
     this._createRenderer()
-    // this._createControls()
+    this._createControls()
+    // this._generateHDR()
     this._createProps()
     this._loadModel().then(() => {
       this._addListeners()
@@ -69,7 +70,7 @@ export class App {
           this.reference.y
         )
         this.camera.lookAt(this.reference)
-        // this.controls.update()
+        this.controls.update()
       })
     })
   }
@@ -113,10 +114,10 @@ export class App {
     directional.shadow.camera.bottom = -d
 
     const helper = new DirectionalLightHelper( directional, 20 )
-    const helper2 = new CameraHelper( directional.shadow.camera );
+    const helper2 = new CameraHelper( directional.shadow.camera )
 
-    this.scene.add(axesHelper, ambient, directional, helper, helper2)
-    this.scene.fog = new Fog(0xD0DCE9, 50, 100)
+    this.scene.add(axesHelper, ambient, directional)
+    this.scene.fog = new Fog(0xD0DCE9, 75, 100)
   }
 
   _createCamera() {
@@ -127,15 +128,22 @@ export class App {
     // console.log(this.camera.lookAt)
   }
 
+  _generateHDR() {
+    let generator = new PMREMGenerator(this.renderer)
+    const hdr = new RGBELoader().load(cubeMap, (map) => {
+      this.envmap = generator.fromEquirectangular(map)
+    })
+  }
+
   _setMaterial(model) {
     let generator = new PMREMGenerator(this.renderer)
     const hdr = new RGBELoader().load(cubeMap, (map) => {
       this.envmap = generator.fromEquirectangular(map)
       model.traverse((elements) => {          
         if (elements.type === 'Mesh') {
+          elements.material.envMapIntensity = 1.6
           elements.material.envMap = this.envmap.texture
           elements.material.envMapIntensity = elements.userData.envMap
-          this.meshes.push(elements)
         }
       })
     })
@@ -186,7 +194,7 @@ export class App {
     this.renderer.setSize(this.canvas.clientWidth, this.canvas.clientHeight)
     this.renderer.setPixelRatio(2)
     this.renderer.shadowMap.enabled = true
-    this.renderer.outputEncoding = 3000
+    this.renderer.outputEncoding = 3001
   }
 
   _loadModel() {
@@ -226,8 +234,8 @@ export class App {
           if (element.type === 'Mesh') {
             element.castShadow = true
             element.receiveShadow = true
-            element.material.roughness = element.userData.roughness
-            element.material.metalness = element.userData.metalness
+            // element.material.roughness = 0.4
+            // element.material.metalness = 0.6
           }
         })
         // this._setMaterial(this.sceneGL)
