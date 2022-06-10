@@ -30,7 +30,7 @@ import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import model from '/models/v1.gltf'
-import scene from '/models/SCENE_01.gltf'
+import scene from '/models/SCENE_04.gltf'
 import cubeMap from '/hdr/cannon.hdr'
 
 function lerp (start, end, amt) { return (1 - amt) * start + amt * end }
@@ -54,23 +54,23 @@ export class App {
     this._createScene()
     this._createCamera()
     this._createRenderer()
-    this._createControls()
+    // this._createControls()
     // this._generateHDR()
     this._createProps()
     this._loadModel().then(() => {
       this._addListeners()
-      console.log(this.reference)
+      // console.log(this.reference)
       this.renderer.setAnimationLoop(() => {
         this.delta = this.clock.getDelta()
         this.time = this.clock.getElapsedTime()
         this._render()
         this.reference.set(
           this.lerp(this.reference.x, this.mouseX, 0.05),
-          this.lerp(this.reference.y + 0.2, 1 - this.mouseY, 0.05),
+          this.lerp(this.reference.y + 0.2, 1 - this.mouseY * 0.8, 0.05),
           this.reference.y
         )
         this.camera.lookAt(this.reference)
-        this.controls.update()
+        // this.controls.update()
       })
     })
   }
@@ -91,8 +91,8 @@ export class App {
   }
 
   _createProps() {
-    const ambient = new AmbientLight(0xffffff, 0.8)
-    const directional = new DirectionalLight(0xffffff, 0.5)
+    const ambient = new AmbientLight(0xf5c19e, 0.2)
+    const directional = new DirectionalLight(0xf4ce9f, 1.5)
     const axesHelper = new AxesHelper(5)
     
     this.mouseX = 0
@@ -103,11 +103,11 @@ export class App {
     directional.castShadow = true
     directional.shadow.mapSize.width = 2048
     directional.shadow.mapSize.height = 2048
-    directional.position.set(10,10,10)
-    directional.target.position.set(500,500,500)
+    directional.position.set(-80,20,-40)
+    directional.target.position.set(40,40,40)
     directional.shadow.bias = -0.004
     directional.shadow.camera.near = d * 0.01
-    directional.shadow.camera.far = d 
+    directional.shadow.camera.far = 300 
     directional.shadow.camera.right = d
     directional.shadow.camera.left = -d
     directional.shadow.camera.top = d
@@ -116,7 +116,7 @@ export class App {
     const helper = new DirectionalLightHelper( directional, 20 )
     const helper2 = new CameraHelper( directional.shadow.camera )
 
-    this.scene.add(axesHelper, ambient, directional)
+    this.scene.add(axesHelper, ambient, directional, helper, helper2)
     this.scene.fog = new Fog(0xD0DCE9, 75, 100)
   }
 
@@ -141,9 +141,9 @@ export class App {
       this.envmap = generator.fromEquirectangular(map)
       model.traverse((elements) => {          
         if (elements.type === 'Mesh') {
-          elements.material.envMapIntensity = 1.6
+         
           elements.material.envMap = this.envmap.texture
-          elements.material.envMapIntensity = elements.userData.envMap
+          elements.material.envMapIntensity = 1
         }
       })
     })
@@ -222,6 +222,7 @@ export class App {
       // })
       this.gltfLoader.load(scene, gltf => {
         this.sceneGL = gltf.scene
+        console.log(gltf.cameras)
         this.sceneGL.castShadow = true
         this.sceneGL.receiveShadow = true
         this.gltfCamera = gltf.cameras[0]
@@ -231,6 +232,15 @@ export class App {
             this.reference = new Vector3(element.position.x, element.position.y, element.position.z)
             this.camera.lookAt(this.reference)
           }
+          if (element.name === 'GROUND') {
+            console.log(element.material)
+            element.material.map.magFilter = 1003
+            element.material.map.anisotropy = 8
+            element.material.roughnessMap.magFilter = 1003
+            element.material.roughnessMap.anisotropy = 8
+            element.material.normalMap.anisotropy = 8
+            element.material.normalMap.magFilter = 1003
+          }
           if (element.type === 'Mesh') {
             element.castShadow = true
             element.receiveShadow = true
@@ -238,10 +248,9 @@ export class App {
             // element.material.metalness = 0.6
           }
         })
-        // this._setMaterial(this.sceneGL)
+        this._setMaterial(this.sceneGL)
         this.sceneGL.position.set(0,0,0)
-        this.scene.add(this.sceneGL)
-        console.log(this.sceneGL)    
+        this.scene.add(this.sceneGL)  
       })
       this.manager.onLoad = function () {  
         console.log('done')
